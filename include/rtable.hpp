@@ -12,14 +12,11 @@ class RouteTable {
 public:
     struct Node {
         std::bitset<ID_SIZE> id{};
-        const char* ip_addr{nullptr}; //char * - more memory efficient - won't be changed 
+        std::string ip_addr{}; //char * - more memory efficient - won't be changed 
         int port{-1};
     };
 
-    /*
-
-    */
-    void set_self_id();
+    void set_self();
     const std::bitset<ID_SIZE>& get_self_id() const;
 
 
@@ -30,11 +27,14 @@ public:
     /*
     debug functions used for local use only
     */
-    void debug_print_node_clusters();
+    //void debug_print_node_clusters();
 
 private:
 
     std::bitset<ID_SIZE> self_id{};
+    int self_port{-1};
+    std::string self_ip{};
+
     /*
     TODO: add additional clusters for local and region
     */
@@ -47,7 +47,7 @@ private:
         /*
     used strictly for set_self_id() 
     */
-    const char* _get_machine_id();
+    std::string _get_machine_id();
 };
 
 
