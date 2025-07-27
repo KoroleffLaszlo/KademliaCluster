@@ -12,53 +12,6 @@
 #include <cmath>
 #include <type_traits>
 
-#define CHUNK_SIZE 4
-
-/*
-converts strings and integers to unsigned long variables
-Used later to convert to hex and into bitset for future self_id processing 
-*/
-template<typename T>
-std::enable_if_t<std::is_integral<T>::value, unsigned long>
-_toul(const T& val)
-{
-    return static_cast<uninsigned_long>(val);
-}
-
-template<typename T>
-std::enable_if_t<std::is_same_v<T, std::string>, unsigned long>
-_toul(const T& val)
-{
-    return std::stoul(val, nullptr, 16);
-}
-
-/*
-string or int conversion to bitset used in parent function 
-return:
-    int : bitshift value for later additions to _id 
-*/
-template<typename T>
-std::enable_if_t<std::is_integral<T>::value, int>
-_toid(const T& val, const std::bitset<ID_SIZE>& _id, size_t pos = npos)
-{
-    return;
-}
-
-template<typename T>
-std::enable_if_t<std::is_same_v<T, std::string>, int>
-_toid(const T& val, const std::bitset<ID_SIZE>& _id, size_t pos = npos)
-{   
-    std::string _val = val;
-    size_t chunk(_chunking(_val));
-    while(chunk)
-    {
-        _val.erase(_val.length() - chunk);
-        auto ul(_toul(_val.substr(section)));
-        chunk = _chunking(_val);
-    }
-    return;
-}
-
 std::string RouteTable::_get_machine_id()
 {
     std::ifstream file("/etc/machine-id");
@@ -73,11 +26,6 @@ std::string RouteTable::_get_machine_id()
                                 + std::string(strerror(errno)));
     }
     return _id;
-}
-
-int RouteTable::_chunking(const std::string& val)
-{
-    return val.length() > CHUNK_SIZE ? CHUNK_SIZE : val.length();
 }
 
 /*
@@ -97,28 +45,55 @@ int RouteTable::_msb_search(const std::bitset<ID_SIZE>& dest_id)
     return -1;
 }
 
-// PUBLIC FUNCTIONS
+// avoiding overhead cost of using regex
+std::vector<std::string> RouteTable::_ip_handle(const std::string& ip)
+{   
+    std::vector<std::string> ip_groups{};
+    std::string group = "";
+    
+    for (auto& c : ip) {
+        if (std::ispunct(static_cast<unsigned char>(c))) {
+            ip_groups.push_back(group);
+            group = "";
+        } else{group += c;}
+    }
+    if (!group.empty()) {
+        ip_groups.push_back(group);
+    }
+    return ip_groups;
+}
 
 void RouteTable::set_self(const int& port, const std::string& ip)
 {
-    this->self_port = port_num;
+    this->self_port = port;
     this->self_ip = ip;
     std::string machine_id = _get_machine_id();
 
     std::cout << "Device machine-id: "<< "|" << machine_id << "|" << "\n";
     std::bitset<ID_SIZE> _id{};
 
-    // remove non-hexable values in machine_id to avoid conversion errors
+    
+    // Remove non-hexable values in machine_id to avoid conversion errors
     machine_id.erase(remove_if(machine_id.begin(), machine_id.end(), 
                     [](char c) {return !isxdigit(static_cast<unsigned char>(c));}), // lambda : return true if NOT hex value
                 machine_id.end());
+    
+    // Handling machine_id 
+    int pos(_toid(machine_id, _id));
+    
+    // Handling port
+    pos = _toid(port, _id, pos);
 
-    std::cout<< "Modified machine-id: "<< "|" << machine_id << "|" << "\n";
+    // Handling ip
+    std::vector<std::string> ip_groups(_ip_handle(ip));
+    for (auto& i : ip_groups) {
+        std::cout<<i<<"\n";
+        pos = _toid(i, _id, pos);
+    }
 
-
-    int port_len = port > 0 ? log10(port) + 1 : 1; //number of digits in port used for chunking
-
+    std::cout<<"ID: "<<_id<<"\n";
     this->self_id = _id;
+    return;
 }
 
 const std::bitset<ID_SIZE>& RouteTable::get_self_id() const
@@ -129,7 +104,6 @@ const std::bitset<ID_SIZE>& RouteTable::get_self_id() const
 /*
 TODO:   logic for store node 
         check for K value size 
-
 */
 void RouteTable::store_node(const Node& _node)
 {
