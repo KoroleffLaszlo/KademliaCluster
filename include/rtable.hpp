@@ -5,9 +5,10 @@
 #include <bitset>
 #include <string>
 #include <vector>
+#include <unordered_map>
 
 #define ID_SIZE 160     // bit size of id 
-#define K_SIZE 8        // number of nodes allowed per bucket 
+#define K_SIZE 20
 #define CHUNK_SIZE 4
 
 class RouteTable {
@@ -15,7 +16,7 @@ public:
     struct Node {
         std::bitset<ID_SIZE> id{};
         std::string ip_addr{};
-        int port{-1};
+        std::size_t port{};
     };
 
     void set_self(const int&, const std::string&);
@@ -33,26 +34,25 @@ public:
 
 private:
 
+    struct Bucket {
+        std::unordered_map<std::size_t, Node> cluster;
+    };
+
     std::bitset<ID_SIZE> self_id{};
-    int self_port{-1};
+    std::size_t self_port{};
     std::string self_ip{};
 
-    /*
-    TODO: add additional clusters for local and region
-    */
-    // std::vector<Node> local_cluster[ID_SIZE];
-    // std::vecotr<Node> region_cluster[ID_SIZE];
-    std::vector<Node> global_cluster[ID_SIZE];
 
+    std::vector<Bucket> route_table{ID_SIZE};
     
-    int _msb_search(const std::bitset<ID_SIZE>&);
+    std::size_t _msb_search(const std::bitset<ID_SIZE>&);
 
     /*
     used strictly for set_self_id() 
     */
     std::string _get_machine_id();
 
-    int _chunking(const std::string& val)
+    std::size_t _chunking(const std::string& val)
     {
         return val.length() > CHUNK_SIZE ? CHUNK_SIZE : val.length();
     }
@@ -118,6 +118,4 @@ private:
         return pos;
     }
 };
-
-
 #endif

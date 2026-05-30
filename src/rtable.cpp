@@ -32,14 +32,16 @@ std::string RouteTable::_get_machine_id()
 returns the index of first instance of up bit in distance between *this* id and
 destination id
 */
-int RouteTable::_msb_search(const std::bitset<ID_SIZE>& dest_id)
+
+// TODO change search functionality to avoid iterating
+std::size_t RouteTable::_msb_search(const std::bitset<ID_SIZE>& dest_id)
 {
     std::bitset<ID_SIZE> distance = dest_id ^ this->self_id;
 
     if (distance == 0) {return -1;} // indicates its our own id
 
     for (auto i = 0; i < ID_SIZE; i++) { 
-        if (dest_id[i]) {return ID_SIZE - 1 - i;} // returns the first instance of the up bit 
+        if (dest_id[i]) { return ID_SIZE - 1 - i; } // returns the first instance of the up bit 
     }
 
     return -1;
@@ -49,7 +51,7 @@ int RouteTable::_msb_search(const std::bitset<ID_SIZE>& dest_id)
 std::vector<std::string> RouteTable::_ip_handle(const std::string& ip)
 {   
     std::vector<std::string> ip_groups{};
-    std::string group = "";
+    std::string group{""};
     
     for (auto& c : ip) {
         if (std::ispunct(static_cast<unsigned char>(c))) {
@@ -80,10 +82,10 @@ void RouteTable::set_self(const int& port, const std::string& ip)
     
     // Handling machine_id 
     int pos(_toid(machine_id, _id));
-    
+    std::cout<< "POS: " << pos<< '\n';
     // Handling port
     pos = _toid(port, _id, pos);
-
+    std::cout<< "POS: " << pos<< '\n';
     // Handling ip
     std::vector<std::string> ip_groups(_ip_handle(ip));
     for (auto& i : ip_groups) {
@@ -91,8 +93,9 @@ void RouteTable::set_self(const int& port, const std::string& ip)
         pos = _toid(i, _id, pos);
     }
 
-    std::cout<<"ID: "<<_id<<"\n";
+    
     this->self_id = _id;
+    std::cout<<"ID: "<<self_id<<"\n";
     return;
 }
 
@@ -107,23 +110,17 @@ TODO:   logic for store node
 */
 void RouteTable::store_node(const Node& _node)
 {
+
     return;
 }
 
+/*
+TODO: update implementation of retrieving node (changed the route table)
+*/
 RouteTable::Node* RouteTable::get_node(const std::bitset<ID_SIZE> node_id)
-{
-
-    int msb_index = _msb_search(node_id);
-    if (msb_index < 0) {return nullptr;}
-
-    std::vector<Node>& cluster = global_cluster[msb_index];
-
-    // TODO: if cluster size >= K size -> then LRU 
-
-    for (auto& _node : cluster) {
-        if (_node.id == node_id) {return &_node;}
-    }
-
+{   
+    std::size_t id_bit = _msb_search(node_id);
+    std::cout << "ID_BIT " << id_bit << '\n';
     return nullptr;
 }
 
