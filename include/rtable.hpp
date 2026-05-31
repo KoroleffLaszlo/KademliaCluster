@@ -17,9 +17,15 @@ public:
         std::bitset<ID_SIZE> id{};
         std::string ip_addr{};
         std::size_t port{};
+
+        Node(std::string address, std::size_t _port) 
+        {
+            ip_addr = address;
+            port = _port;
+        }
     };
 
-    void set_self(const int&, const std::string&);
+    void set_self(const std::size_t&, const std::string&);
     const std::bitset<ID_SIZE>& get_self_id() const;
 
 

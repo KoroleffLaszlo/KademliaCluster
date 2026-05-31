@@ -65,7 +65,7 @@ std::vector<std::string> RouteTable::_ip_handle(const std::string& ip)
     return ip_groups;
 }
 
-void RouteTable::set_self(const int& port, const std::string& ip)
+void RouteTable::set_self(const std::size_t& port, const std::string& ip)
 {
     this->self_port = port;
     this->self_ip = ip;
@@ -110,6 +110,12 @@ TODO:   logic for store node
 */
 void RouteTable::store_node(const Node& _node)
 {
+    /*
+    implement way to find 
+    take the _node hashed id_bit
+    */
+    const std::size_t id_bit = _msb_search(_node.id);
+    
 
     return;
 }
